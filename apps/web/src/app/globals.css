@@ -1,0 +1,230 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------ tokens */
+
+:root {
+  --radius: 1rem;
+
+  --background: #eef2f8;
+  --background-2: #e6ecf5;
+  --foreground: #0b1324;
+  --card: rgb(255 255 255 / 0.78);
+  --card-solid: #ffffff;
+  --card-foreground: #0b1324;
+  --popover: #ffffff;
+  --popover-foreground: #0b1324;
+  --muted: #e8edf5;
+  --muted-foreground: #5a6a82;
+  --border: rgb(15 23 42 / 0.09);
+  --input: rgb(15 23 42 / 0.14);
+  --ring: #0891b2;
+  --primary: #0b1324;
+  --primary-foreground: #ffffff;
+  --secondary: #e3e9f2;
+  --secondary-foreground: #0b1324;
+  --accent: #e3e9f2;
+  --accent-foreground: #0b1324;
+  --destructive: #e11d48;
+  --destructive-foreground: #ffffff;
+
+  /* energy palette */
+  --charge: #0ca86a;
+  --discharge: #d98500;
+  --ac: #0891b2;
+  --dc: #7c3aed;
+  --usb: #9d4edd;
+  --solar: #e0a100;
+  --danger: #e11d48;
+  --warning: #d98500;
+  --track: rgb(15 23 42 / 0.08);
+  --glow-strength: 0.18;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.18);
+}
+
+.dark {
+  --background: #060a13;
+  --background-2: #0a1020;
+  --foreground: #e7edf7;
+  --card: rgb(17 25 43 / 0.62);
+  --card-solid: #0f1729;
+  --card-foreground: #e7edf7;
+  --popover: #0e1628;
+  --popover-foreground: #e7edf7;
+  --muted: #121b2e;
+  --muted-foreground: #8c99b0;
+  --border: rgb(148 163 184 / 0.11);
+  --input: rgb(148 163 184 / 0.18);
+  --ring: #22d3ee;
+  --primary: #e7edf7;
+  --primary-foreground: #060a13;
+  --secondary: #16213a;
+  --secondary-foreground: #e7edf7;
+  --accent: #18243f;
+  --accent-foreground: #e7edf7;
+  --destructive: #ff4d6d;
+  --destructive-foreground: #ffffff;
+
+  --charge: #2cf0a0;
+  --discharge: #ffb224;
+  --ac: #2fd9f4;
+  --dc: #a78bfa;
+  --usb: #c38bff;
+  --solar: #ffd23f;
+  --danger: #ff4d6d;
+  --warning: #ffb224;
+  --track: rgb(148 163 184 / 0.1);
+  --glow-strength: 0.55;
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 20px 40px -24px rgb(0 0 0 / 0.8);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-solid: var(--card-solid);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-charge: var(--charge);
+  --color-discharge: var(--discharge);
+  --color-ac: var(--ac);
+  --color-dc: var(--dc);
+  --color-usb: var(--usb);
+  --color-solar: var(--solar);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --color-track: var(--track);
+
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 4px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: var(--font-inter), var(--font-vazirmatn), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, monospace;
+}
+
+/* ------------------------------------------------------------------ base */
+
+@layer base {
+  * {
+    @apply border-border outline-ring/60;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    scrollbar-gutter: stable;
+  }
+
+  html[lang='fa'] {
+    --font-sans: var(--font-vazirmatn), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
+    min-height: 100dvh;
+    background-image:
+      radial-gradient(60rem 40rem at 0% -10%, color-mix(in oklab, var(--ac) 14%, transparent), transparent 60%),
+      radial-gradient(50rem 36rem at 105% 0%, color-mix(in oklab, var(--dc) 14%, transparent), transparent 60%),
+      radial-gradient(60rem 40rem at 50% 120%, color-mix(in oklab, var(--charge) 9%, transparent), transparent 60%),
+      linear-gradient(180deg, var(--background), var(--background-2));
+    background-attachment: fixed;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--ac) 35%, transparent);
+  }
+}
+
+/* ------------------------------------------------------------------ utilities */
+
+@utility glass {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+@utility text-balance {
+  text-wrap: balance;
+}
+
+@utility glow-charge {
+  filter: drop-shadow(0 0 14px color-mix(in oklab, var(--charge) calc(var(--glow-strength) * 100%), transparent));
+}
+
+@utility glow-discharge {
+  filter: drop-shadow(0 0 14px color-mix(in oklab, var(--discharge) calc(var(--glow-strength) * 100%), transparent));
+}
+
+@utility hairline-top {
+  position: relative;
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 1px;
+    border-radius: inherit;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.12), transparent);
+    pointer-events: none;
+  }
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@utility animate-pulse-ring {
+  animation: pulse-ring 2.2s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

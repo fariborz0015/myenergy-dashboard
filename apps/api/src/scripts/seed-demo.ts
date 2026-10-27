@@ -14,6 +14,7 @@ async function main() {
   const prisma = new PrismaClient();
   const sim = new PowerStationSimulator({ seed: 42, initialSoc: 64 });
   sim.state.timersSet.acAutoOff = 0;
+  sim.state.chargeLimitW = 400;
   const { info } = sim;
   const device = await prisma.device.upsert({
     where: { sn: info.deviceSn },
@@ -38,9 +39,9 @@ async function main() {
     const daylight = hourOfDay > 6.5 && hourOfDay < 19;
     sim.setScenario({
       solar: daylight,
-      solarPeakW: daylight ? 380 * Math.sin(((hourOfDay - 6.5) / 12.5) * Math.PI) : 0,
-      acCharger: hourOfDay > 1 && hourOfDay < 4, // cheap night tariff top-up
-      extraAcLoadW: hourOfDay > 19 && hourOfDay < 23 ? 95 : 0, // evening TV
+      solarPeakW: daylight ? 560 * Math.sin(((hourOfDay - 6.5) / 12.5) * Math.PI) : 0,
+      acCharger: hourOfDay >= 0.5 && hourOfDay < 5, // cheap night tariff top-up
+      extraAcLoadW: hourOfDay > 19 && hourOfDay < 22.5 ? 85 : 0, // evening TV
     });
     sim.tick(STEP_S);
     const sys = decodeFrame(sim.systemFrame());

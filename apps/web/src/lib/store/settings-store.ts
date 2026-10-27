@@ -1,0 +1,69 @@
+'use client';
+
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { DEFAULT_ALERT_THRESHOLDS, DEFAULT_ENERGY_CONFIG, presetForModel, type EnergyConfig } from '@myenergy/protocol';
+
+export interface Settings {
+  /** `null` = take it from the model preset (or the 1024 Wh default). */
+  capacityWh: number | null;
+  usableFactor: number;
+  effAc: number;
+  effDc: number;
+  ratedOutputW: number;
+  socLow: number;
+  socCritical: number;
+  tempHighC: number;
+  tempUnit: 'c' | 'f';
+  persianDigits: boolean;
+  /** Extra GATT service UUID added to `optionalServices` (16-bit hex or full UUID). */
+  customServiceUuid: string;
+  /** Mirror telemetry to the API when it is reachable. */
+  cloudSync: boolean;
+}
+
+export const DEFAULT_SETTINGS: Settings = {
+  capacityWh: null,
+  usableFactor: DEFAULT_ENERGY_CONFIG.usableFactor,
+  effAc: DEFAULT_ENERGY_CONFIG.effAc,
+  effDc: DEFAULT_ENERGY_CONFIG.effDc,
+  ratedOutputW: 1000,
+  socLow: DEFAULT_ALERT_THRESHOLDS.socLow,
+  socCritical: DEFAULT_ALERT_THRESHOLDS.socCritical,
+  tempHighC: DEFAULT_ALERT_THRESHOLDS.tempHighC,
+  tempUnit: 'c',
+  persianDigits: true,
+  customServiceUuid: '',
+  cloudSync: true,
+};
+
+interface SettingsStore extends Settings {
+  update: (patch: Partial<Settings>) => void;
+  reset: () => void;
+}
+
+export const useSettings = create<SettingsStore>()(
+  persist(
+    (set) => ({
+      ...DEFAULT_SETTINGS,
+      update: (patch) => set(patch),
+      reset: () => set(DEFAULT_SETTINGS),
+    }),
+    { name: 'myenergy-settings', version: 1 },
+  ),
+);
+
+export function resolveCapacity(s: Pick<Settings, 'capacityWh'>, modelCode: string | null | undefined): number {
+  return s.capacityWh ?? presetForModel(modelCode)?.capacityWh ?? DEFAULT_ENERGY_CONFIG.capacityWh;
+}
+
+export function energyConfigOf(s: Settings, modelCode: string | null | undefined): EnergyConfig {
+  return {
+    capacityWh: resolveCapacity(s, modelCode),
+    usableFactor: s.usableFactor,
+    effAc: s.effAc,
+    effDc: s.effDc,
+  };
+}
+
+export { normalizeServiceUuid } from '@/lib/uuid';

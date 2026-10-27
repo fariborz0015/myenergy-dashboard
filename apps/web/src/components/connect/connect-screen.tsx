@@ -1,0 +1,273 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
+import {
+  Activity,
+  ArrowRight,
+  Bluetooth,
+  BluetoothSearching,
+  Calculator,
+  CircleAlert,
+  Eye,
+  LoaderCircle,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sparkles,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { api, useApi } from '@/lib/api';
+import { deviceConnection } from '@/lib/device/connection';
+import { useBleSupport } from '@/lib/hooks/use-ble-support';
+import { displayName, useDevice } from '@/lib/store/device-store';
+import { cn } from '@/lib/utils';
+import { HeroVisual } from './hero-visual';
+
+const fade = (i: number) => ({
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5, delay: 0.06 * i, ease: [0.2, 0.7, 0.2, 1] as const },
+});
+
+export function ConnectScreen() {
+  const t = useTranslations('connect');
+  const router = useRouter();
+  const support = useBleSupport();
+  const status = useDevice((s) => s.status);
+  const mode = useDevice((s) => s.mode);
+  const error = useDevice((s) => s.error);
+  const info = useDevice((s) => s.info);
+  const busy = status === 'requesting' || status === 'connecting';
+  const bleReady = support.supported && support.secure;
+
+  const connect = async (kind: 'ble' | 'demo', acceptAllDevices = false) => {
+    const ok = await deviceConnection.connect(kind, { acceptAllDevices });
+    if (ok) router.push('/dashboard');
+  };
+
+  return (
+    <div className="flex flex-col gap-16 pb-8">
+      <section className="grid items-center gap-10 pt-2 lg:grid-cols-[1.1fr_1fr] lg:gap-6 lg:pt-10">
+        <div className="flex flex-col gap-6">
+          <motion.span {...fade(0)} className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
+            <Sparkles className="size-3.5 text-charge" />
+            {t('eyebrow')}
+          </motion.span>
+          <motion.h1 {...fade(1)} className="max-w-xl text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+            {t('title')}
+          </motion.h1>
+          <motion.p {...fade(2)} className="max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
+            {t('subtitle')}
+          </motion.p>
+
+          {status === 'connected' && mode !== null ? (
+            <motion.div {...fade(3)}>
+              <Card className="max-w-lg">
+                <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-charge/15 text-charge">
+                      <Bluetooth className="size-5" />
+                    </span>
+                    <p className="truncate font-medium">{t('connectedAs', { name: displayName(info) })}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" onClick={() => deviceConnection.disconnect()}>
+                      {t('disconnect')}
+                    </Button>
+                    <Button variant="energy" asChild>
+                      <Link href="/dashboard">
+                        {t('continue')}
+                        <ArrowRight className="rtl:rotate-180" />
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ) : (
+            <motion.div {...fade(3)} className="flex flex-col gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Button
+                  size="xl"
+                  variant="energy"
+                  disabled={busy || (support.checked && !bleReady)}
+                  onClick={() => connect('ble')}
+                  className="sm:min-w-64"
+                >
+                  {busy && mode === 'ble' ? <LoaderCircle className="size-5 animate-spin" /> : <Bluetooth className="size-5" />}
+                  {t('bluetooth')}
+                </Button>
+                <Button size="xl" variant="outline" disabled={busy} onClick={() => connect('demo')} data-testid="demo-button">
+                  {busy && mode === 'demo' ? <LoaderCircle className="size-5 animate-spin" /> : <Activity className="size-5 text-charge" />}
+                  {t('demo')}
+                </Button>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                <span>{t('demoHint')}</span>
+                {bleReady && (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => connect('ble', true)}
+                    className="inline-flex items-center gap-1.5 rounded text-ac underline-offset-4 outline-none hover:underline focus-visible:ring-[3px] focus-visible:ring-ring/40 disabled:opacity-50"
+                  >
+                    <BluetoothSearching className="size-3.5" />
+                    {t('showAll')}
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {status === 'error' && error && <ConnectError message={error} onRetry={() => connect(mode === 'demo' ? 'demo' : 'ble')} />}
+          {support.checked && !bleReady && <UnsupportedNotice />}
+
+          <motion.p {...fade(4)} className="flex max-w-lg items-start gap-2 text-xs text-muted-foreground">
+            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-charge" />
+            {t('privacy')}
+          </motion.p>
+        </div>
+
+        <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, ease: [0.2, 0.7, 0.2, 1] }}>
+          <HeroVisual />
+        </motion.div>
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-3">
+        {(
+          [
+            ['live', Activity, 'text-charge bg-charge/12'],
+            ['control', SlidersHorizontal, 'text-ac bg-ac/12'],
+            ['plan', Calculator, 'text-dc bg-dc/12'],
+          ] as const
+        ).map(([key, Icon, tone], i) => (
+          <motion.div key={key} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}>
+            <Card className="h-full">
+              <CardContent className="flex flex-col gap-3">
+                <span className={cn('grid size-10 place-items-center rounded-xl', tone)}>
+                  <Icon className="size-5" />
+                </span>
+                <h2 className="font-semibold">{t(`features.${key}.title`)}</h2>
+                <p className="text-sm leading-relaxed text-muted-foreground">{t(`features.${key}.body`)}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ))}
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardContent className="flex flex-col gap-4">
+            <h2 className="font-semibold">{t('steps.title')}</h2>
+            <ol className="flex flex-col gap-3">
+              {(['one', 'two', 'three'] as const).map((k, i) => (
+                <li key={k} className="flex items-start gap-3 text-sm text-muted-foreground">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-muted text-xs font-semibold text-foreground tabular">{i + 1}</span>
+                  <span className="pt-0.5">{t(`steps.${k}`)}</span>
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
+        <WatchLive />
+      </section>
+    </div>
+  );
+}
+
+function ConnectError({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const t = useTranslations('connect.error');
+  return (
+    <div role="alert" className="flex max-w-lg flex-col gap-3 rounded-2xl border border-danger/30 bg-danger/8 p-4">
+      <div className="flex items-start gap-3">
+        <CircleAlert className="mt-0.5 size-5 shrink-0 text-danger" />
+        <div className="flex flex-col gap-1">
+          <p className="font-medium">{t('title')}</p>
+          <p className="text-sm break-words text-muted-foreground">{message}</p>
+          <p className="text-sm text-muted-foreground">{t('help')}</p>
+        </div>
+      </div>
+      <Button variant="outline" size="sm" className="w-fit" onClick={onRetry}>
+        {t('retry')}
+      </Button>
+    </div>
+  );
+}
+
+function UnsupportedNotice() {
+  const t = useTranslations('connect.unsupported');
+  const support = useBleSupport();
+  return (
+    <div role="status" className="flex max-w-lg flex-col gap-2 rounded-2xl border border-discharge/30 bg-discharge/8 p-4 text-sm">
+      <p className="flex items-center gap-2 font-medium">
+        <CircleAlert className="size-4 text-discharge" />
+        {t('title')}
+      </p>
+      <ul className="flex list-disc flex-col gap-1 ps-5 text-muted-foreground">
+        {!support.secure && <li>{t('insecure')}</li>}
+        {support.ios ? <li>{t('ios')}</li> : <li>{t('browsers')}</li>}
+        {support.linux && <li>{t('flag')}</li>}
+        <li>{t('demoInstead')}</li>
+      </ul>
+    </div>
+  );
+}
+
+function WatchLive() {
+  const t = useTranslations('connect.watch');
+  const router = useRouter();
+  const apiStatus = useApi((s) => s.status);
+  const [devices, setDevices] = useState<{ sn: string; name: string | null; transport: string | null }[] | null>(null);
+
+  useEffect(() => {
+    if (apiStatus !== 'online') return;
+    let alive = true;
+    const load = () => api.liveDevices().then((d) => alive && setDevices(d)).catch(() => alive && setDevices([]));
+    void load();
+    const id = setInterval(load, 5000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [apiStatus]);
+
+  if (apiStatus !== 'online') return null;
+  return (
+    <Card>
+      <CardContent className="flex flex-col gap-4">
+        <div>
+          <h2 className="flex items-center gap-2 font-semibold">
+            <Eye className="size-4 text-ac" />
+            {t('title')}
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t('body')}</p>
+        </div>
+        {devices && devices.length === 0 && <p className="text-sm text-muted-foreground">{t('empty')}</p>}
+        <ul className="flex flex-col gap-2">
+          {devices?.map((d) => (
+            <li key={d.sn} className="flex items-center justify-between gap-3 rounded-xl bg-muted/60 px-3 py-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{d.name ?? d.sn}</p>
+                <p className="truncate font-mono text-xs text-muted-foreground">{d.sn}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  deviceConnection.watch(d.sn, d.name);
+                  router.push('/dashboard');
+                }}
+              >
+                {t('action')}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
