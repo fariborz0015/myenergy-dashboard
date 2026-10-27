@@ -146,7 +146,7 @@ function Toolbar({ onControls, onWifi, onDetails }: { onControls: () => void; on
         <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight sm:text-3xl">{displayName(info)}</h1>
         {info.deviceSn && <p className="font-mono text-xs text-muted-foreground">{info.deviceSn}</p>}
       </div>
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0 sm:pb-0">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
         {actions
           .filter((a) => !a.hidden)
           .map((a) => (

@@ -27,10 +27,10 @@ import { displayName, useDevice } from '@/lib/store/device-store';
 import { cn } from '@/lib/utils';
 import { HeroVisual } from './hero-visual';
 
+/** CSS entrance animation: runs at first paint, before hydration, and honours reduced motion. */
 const fade = (i: number) => ({
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, delay: 0.06 * i, ease: [0.2, 0.7, 0.2, 1] as const },
+  className: 'animate-in fade-in-0 slide-in-from-bottom-3 duration-500 fill-mode-both',
+  style: { animationDelay: `${60 * i}ms` },
 });
 
 export function ConnectScreen() {
@@ -53,19 +53,19 @@ export function ConnectScreen() {
     <div className="flex flex-col gap-16 pb-8">
       <section className="grid items-center gap-10 pt-2 lg:grid-cols-[1.1fr_1fr] lg:gap-6 lg:pt-10">
         <div className="flex flex-col gap-6">
-          <motion.span {...fade(0)} className="inline-flex w-fit items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur">
+          <span className={cn(fade(0).className, 'inline-flex w-fit items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-medium text-muted-foreground backdrop-blur')} style={fade(0).style}>
             <Sparkles className="size-3.5 text-charge" />
             {t('eyebrow')}
-          </motion.span>
-          <motion.h1 {...fade(1)} className="max-w-xl text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+          </span>
+          <h1 className={cn(fade(1).className, 'max-w-xl text-4xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl')} style={fade(1).style}>
             {t('title')}
-          </motion.h1>
-          <motion.p {...fade(2)} className="max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg">
+          </h1>
+          <p className={cn(fade(2).className, 'max-w-lg text-base leading-relaxed text-muted-foreground sm:text-lg')} style={fade(2).style}>
             {t('subtitle')}
-          </motion.p>
+          </p>
 
           {status === 'connected' && mode !== null ? (
-            <motion.div {...fade(3)}>
+            <div className={fade(3).className} style={fade(3).style}>
               <Card className="max-w-lg">
                 <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center">
                   <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -87,9 +87,9 @@ export function ConnectScreen() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div {...fade(3)} className="flex flex-col gap-3">
+            <div className={cn(fade(3).className, 'flex flex-col gap-3')} style={fade(3).style}>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Button
                   size="xl"
@@ -120,21 +120,21 @@ export function ConnectScreen() {
                   </button>
                 )}
               </div>
-            </motion.div>
+            </div>
           )}
 
           {status === 'error' && error && <ConnectError message={error} onRetry={() => connect(mode === 'demo' ? 'demo' : 'ble')} />}
           {support.checked && !bleReady && <UnsupportedNotice />}
 
-          <motion.p {...fade(4)} className="flex max-w-lg items-start gap-2 text-xs text-muted-foreground">
+          <p className={cn(fade(4).className, 'flex max-w-lg items-start gap-2 text-xs text-muted-foreground')} style={fade(4).style}>
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-charge" />
             {t('privacy')}
-          </motion.p>
+          </p>
         </div>
 
-        <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8, ease: [0.2, 0.7, 0.2, 1] }}>
+        <div className="mx-auto w-full max-w-[320px] animate-in fade-in-0 zoom-in-95 duration-700 fill-mode-both sm:max-w-[440px]">
           <HeroVisual />
-        </motion.div>
+        </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">

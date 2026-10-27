@@ -172,15 +172,18 @@ class DeviceConnection {
     this.transport = null;
   }
 
-  private onConnected() {
+  /** After a reconnect the session (and its energy counters) simply continues. */
+  private onConnected(isReconnect = false) {
     const s = useDevice.getState();
     s.setStatus('connected');
     s.setReconnectAttempt(0);
     s.patchInfo({ bleName: this.transport?.deviceName ?? null });
     if (this.ble) s.setGatt(this.ble.details ? { ...this.ble.details } : null);
-    this.integrator.reset();
-    this.loadToday();
-    s.setEnergy({ startedAt: Date.now(), whIn: 0, whOut: 0 }, { date: todayKey(), ...this.todayBase });
+    if (!isReconnect) {
+      this.integrator.reset();
+      this.loadToday();
+      s.setEnergy({ startedAt: Date.now(), whIn: 0, whOut: 0 }, { date: todayKey(), ...this.todayBase });
+    }
     this.runConnectSequence();
   }
 
@@ -205,7 +208,7 @@ class DeviceConnection {
       try {
         await t.connect();
         if (gen !== this.generation) return;
-        this.onConnected();
+        this.onConnected(true);
         return;
       } catch (e) {
         reason = asError(e);
