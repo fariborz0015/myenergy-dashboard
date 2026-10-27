@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { deviceConnection } from '@/lib/device/connection';
+import { useFmt } from '@/lib/format';
 import { displayName, useDevice } from '@/lib/store/device-store';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +38,8 @@ export function DetailsDialog({ open, onOpenChange }: { open: boolean; onOpenCha
   const info = useDevice((s) => s.info);
   const mode = useDevice((s) => s.mode);
   const gatt = useDevice((s) => s.gatt);
+  const telemetry = useDevice((s) => s.telemetry);
+  const fmt = useFmt();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -67,6 +70,16 @@ export function DetailsDialog({ open, onOpenChange }: { open: boolean; onOpenCha
             </dl>
           </section>
         </div>
+
+        <section>
+          <h3 className="mb-1 text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t('battery')}</h3>
+          <dl className="grid divide-y divide-border md:grid-cols-2 md:gap-x-6 md:divide-y-0">
+            <Row label={t('soh')} value={telemetry.sohPct === null ? null : fmt.pct(telemetry.sohPct)} />
+            <Row label={t('current')} value={telemetry.batteryCurrentA === null ? null : `${fmt.num(telemetry.batteryCurrentA, 2)} A`} />
+            <Row label={t('cells')} value={telemetry.cellVoltagesV.length ? telemetry.cellVoltagesV.map((v) => `${fmt.num(v, 3)} V`).join(' · ') : null} />
+            <Row label={t('internalTemps')} value={telemetry.internalTempsC.length ? telemetry.internalTempsC.map((c) => fmt.temp(c)).join(' · ') : null} />
+          </dl>
+        </section>
 
         <section className="flex flex-col gap-3">
           <div>

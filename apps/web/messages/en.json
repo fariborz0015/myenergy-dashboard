@@ -172,7 +172,11 @@
     "updated": "Live",
     "stale": "No data for {seconds}s",
     "ports": "{count, plural, one {# port} other {# ports}}",
-    "refreshed": "Asked the station for its info again"
+    "refreshed": "Asked the station for its info again",
+    "health": "Health",
+    "current": "Current",
+    "cell": "Cell",
+    "batteryDetails": "Battery details"
   },
   "alerts": {
     "socLow": {
@@ -274,7 +278,12 @@
     "demoGatt": "The demo station has no GATT table: it plugs straight into the protocol layer.",
     "watchGatt": "You're watching a stream from another browser; there is no Bluetooth link here.",
     "noServices": "No services were accessible. Add your device's service UUID in Settings, then reconnect.",
-    "unknown": "Unknown"
+    "unknown": "Unknown",
+    "battery": "Battery",
+    "soh": "State of health",
+    "current": "Current",
+    "cells": "Cell voltage",
+    "internalTemps": "Internal temperatures"
   },
   "demo": {
     "title": "Demo controls",

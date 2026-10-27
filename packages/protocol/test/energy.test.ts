@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   availableEnergyWh,
-  DEFAULT_ENERGY_CONFIG as cfg,
+  DEFAULT_ENERGY_CONFIG,
   EnergyIntegrator,
   evaluateAlerts,
   hoursOf,
@@ -15,6 +15,9 @@ import {
   timeToFullHours,
   type Appliance,
 } from '../src';
+
+/** Fixed config so the expected numbers below stay hand-checkable (10 % BMS reserve). */
+const cfg = { ...DEFAULT_ENERGY_CONFIG, capacityWh: 1024, usableFactor: 0.9 };
 
 describe('runtime', () => {
   it('uses SOC, usable factor and per-rail efficiency', () => {
@@ -113,12 +116,21 @@ describe('alerts', () => {
   });
 });
 
+describe('defaults', () => {
+  it('do not apply a reserve on top of the BMS SOC', () => {
+    expect(DEFAULT_ENERGY_CONFIG.usableFactor).toBe(1);
+    // 84 % of 1024 Wh at 69 W AC → ~11 h (measured ~10 Wh/% at the outlet on a real unit)
+    expect(runtimeHours(84, { acW: 69, dcW: 0, usbW: 0 }, DEFAULT_ENERGY_CONFIG)).toBeCloseTo(10.97, 1);
+  });
+});
+
 describe('misc', () => {
   it('splits hours', () => {
     expect(splitHours(27.5)).toEqual({ days: 1, hours: 3, minutes: 30 });
   });
   it('finds model presets', () => {
     expect(presetForModel('MGI106MG2HEU')?.capacityWh).toBe(1024);
+    expect(presetForModel('MGI032GR1HEU')).toMatchObject({ capacityWh: 1024, maxChargeW: 350 });
     expect(presetForModel('unknown')).toBeUndefined();
   });
 });

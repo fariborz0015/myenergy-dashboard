@@ -11,20 +11,27 @@ export interface EnergyConfig {
   effDc: number;
 }
 
+/**
+ * `usableFactor` defaults to 1: on a real MGI032GR1HEU the BMS-reported SOC already refers to
+ * the usable capacity (each 1 % delivered ~10.1 Wh at the AC outlet), so applying an extra
+ * reserve would under-estimate runtime.
+ */
 export const DEFAULT_ENERGY_CONFIG: EnergyConfig = {
   capacityWh: 1024,
-  usableFactor: 0.9,
+  usableFactor: 1,
   effAc: 0.88,
   effDc: 0.95,
 };
 
 /**
- * Capacity presets by model code prefix. These are educated guesses (the app only maps
- * model → max charge power) — the user can always override the capacity in settings.
+ * Capacity presets by model code prefix (the app itself only maps model → max charge power).
+ * MGI032: measured on a real MGI032GR1HEU — ~10.1 Wh at the AC outlet per 1 % SOC at ~70 W,
+ * i.e. a ~1 kWh class pack (sold as INFINITY 1000). MGI106 is an unverified guess.
+ * The user can always override the capacity in settings.
  */
 export const MODEL_PRESETS: { prefix: string; label: string; capacityWh: number; maxChargeW: number }[] = [
-  { prefix: 'MGI106', label: 'INFINITY 1000', capacityWh: 1024, maxChargeW: 1200 },
-  { prefix: 'MGI032', label: 'INFINITY 300', capacityWh: 320, maxChargeW: 350 },
+  { prefix: 'MGI032', label: 'INFINITY 1000', capacityWh: 1024, maxChargeW: 350 },
+  { prefix: 'MGI106', label: 'MGI106', capacityWh: 1024, maxChargeW: 1200 },
 ];
 
 export function presetForModel(modelCode: string | null | undefined) {

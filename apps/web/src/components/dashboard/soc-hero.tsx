@@ -135,6 +135,7 @@ export function SocHero() {
             <AnimatedNumber value={Math.abs(e.netW)} format={(v) => `${e.netW > 0 ? '+' : '−'}${fmt.watts(Math.round(v))}`} className="tabular" />
           )}
         </div>
+        <BatteryChips />
         {e.deviceRuntime !== null && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -167,5 +168,30 @@ function MiniStat({ label, value, tone, fmt }: { label: string; value: number; t
       </div>
       <AnimatedNumber value={value} format={(v) => fmt(Math.round(v))} className="mt-0.5 block text-lg font-semibold tabular" />
     </div>
+  );
+}
+
+/** Health, current and cell voltage from the 53 frame (shown only when the station reports them). */
+function BatteryChips() {
+  const t = useTranslations('dashboard');
+  const fmt = useFmt();
+  const soh = useDevice((s) => s.telemetry.sohPct);
+  const current = useDevice((s) => s.telemetry.batteryCurrentA);
+  const cells = useDevice((s) => s.telemetry.cellVoltagesV);
+  const cellV = cells.length ? cells.reduce((a, b) => a + b, 0) / cells.length : null;
+  const items = [
+    soh !== null && { key: 'soh', label: t('health'), value: fmt.pct(soh) },
+    current !== null && { key: 'current', label: t('current'), value: `${fmt.num(current, 2)} A` },
+    cellV !== null && { key: 'cell', label: t('cell'), value: `${fmt.num(cellV, 2)} V` },
+  ].filter(Boolean) as { key: string; label: string; value: string }[];
+  if (!items.length) return null;
+  return (
+    <ul className="flex flex-wrap justify-center gap-1.5 text-[11px]" aria-label={t('batteryDetails')}>
+      {items.map((i) => (
+        <li key={i.key} className="rounded-full bg-muted/60 px-2 py-0.5 text-muted-foreground">
+          {i.label} <span className="font-medium text-foreground tabular" dir="ltr">{i.value}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

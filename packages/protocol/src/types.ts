@@ -124,6 +124,8 @@ export interface SystemData {
   power?: PowerReadings;
   /** Block `ab` word 0. Unit unverified; treated as minutes. */
   remainUsableTime?: number;
+  /** Block `ac` words × 0.1 °C. Word 0 equals the battery temperature on a real device; the rest are probably inverter / MOSFET sensors. */
+  internalTempsC?: number[];
   timersSet?: TimerSettings;
   timersRemaining?: TimerSettings;
   lightWorkMode?: number;
@@ -133,10 +135,20 @@ export interface SystemData {
   blocks: Record<string, string>;
 }
 
+/**
+ * cmd 0x53. Only SOC and temperatures are used by the original app; the other fields were
+ * identified from a real MGI032GR1HEU (see `parseBattery`).
+ */
 export interface BatteryData {
   soc: number;
   tempC: number | null;
   temperaturesC: number[];
+  /** Byte 1, observed 100 on a healthy pack — most likely state of health (%). */
+  sohPct: number | null;
+  /** Bytes 6..9 as i32 BE × 0.01 A; negative while discharging. */
+  currentA: number | null;
+  /** Trailing `<count:1B><u16 BE mV × count>` block. */
+  cellVoltagesV: number[];
 }
 
 export interface VersionInfo {

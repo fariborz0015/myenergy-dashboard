@@ -49,7 +49,16 @@ export const useSettings = create<SettingsStore>()(
       update: (patch) => set(patch),
       reset: () => set(DEFAULT_SETTINGS),
     }),
-    { name: 'myenergy-settings', version: 1 },
+    {
+      name: 'myenergy-settings',
+      version: 2,
+      // v2: the BMS SOC already excludes the reserve, so the old 0.9 default double-counted it.
+      migrate: (persisted, version) => {
+        const s = (persisted ?? {}) as Partial<Settings>;
+        if (version < 2 && s.usableFactor === 0.9) s.usableFactor = 1;
+        return s as SettingsStore;
+      },
+    },
   ),
 );
 

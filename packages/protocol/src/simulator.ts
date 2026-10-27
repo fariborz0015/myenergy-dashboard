@@ -386,15 +386,28 @@ export class PowerStationSimulator {
       lightWorkMode: s.lightWorkMode,
       backlight: s.backlight,
       chargingPowerSetting: s.chargeLimitW,
+      internalTempsC: [s.tempC, s.tempC + 4, s.tempC + 12 + s.power.acOutputW / 60, s.tempC + 12 + s.power.acOutputW / 60, s.tempC + 7],
     });
   }
 
+  /** LFP-like cell voltage (3.0–3.4 V) and a 12-cell pack for the current reading. */
+  private cellVoltage(): number {
+    const soc = this.state.socExact / 100;
+    return 3.0 + 0.25 * soc + 0.15 * soc ** 4;
+  }
+
   batteryFrame(): Bytes {
-    const t = this.state.tempC;
+    const s = this.state;
+    const p = s.power;
+    const idleW = s.switches.acOutput ? 9 : 2;
+    const drawW = p.acOutputW / 0.88 + (p.dcOutputW + p.usbAW + p.usbCW + p.wirelessW) / 0.95 + idleW;
+    const cellV = this.cellVoltage();
     return encodeBattery({
-      soc: this.state.socExact,
-      temperaturesC: [t - 0.4, t + 0.6],
-      reserved: [0x0c, 0xf2, 0x00, 0x64],
+      soc: s.socExact,
+      temperaturesC: [s.tempC],
+      sohPct: 100,
+      currentA: (p.inputW * 0.94 - drawW) / (cellV * 12),
+      cellVoltagesV: [cellV],
     });
   }
 }

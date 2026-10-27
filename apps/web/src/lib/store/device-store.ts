@@ -29,6 +29,12 @@ export interface Telemetry {
   lightWorkMode: number | null;
   backlight: number | null;
   chargeLimitW: number | null;
+  /** From the 53 frame (identified on a real device): state of health, current, cell voltages. */
+  sohPct: number | null;
+  batteryCurrentA: number | null;
+  cellVoltagesV: number[];
+  /** Block `ac` of the 51 frame, °C. */
+  internalTempsC: number[];
   lastFrameAt: number | null;
 }
 
@@ -95,6 +101,10 @@ export const EMPTY_TELEMETRY: Telemetry = {
   lightWorkMode: null,
   backlight: null,
   chargeLimitW: null,
+  sohPct: null,
+  batteryCurrentA: null,
+  cellVoltagesV: [],
+  internalTempsC: [],
   lastFrameAt: null,
 };
 

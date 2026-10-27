@@ -69,6 +69,8 @@ export interface SystemFrameInput {
   lightWorkMode: number;
   backlight: number;
   chargingPowerSetting: number;
+  /** Block `ac`, °C (encoded as words × 10). */
+  internalTempsC?: number[];
 }
 
 function timerWords(t: TimerSettings): number[] {
@@ -99,7 +101,10 @@ export function encodeSystem(d: SystemFrameInput): Bytes {
     ...timerWords(d.timersSet),
     ...timerWords(d.timersRemaining),
   ];
-  const ac = [0, 0, 0, 0];
+  const ac = (d.internalTempsC ?? [0, 0, 0, 0]).map((t) => {
+    const v = Math.round(t * 10);
+    return v < 0 ? v + 0x10000 : v;
+  });
   const ba = [0x00, d.lightWorkMode & 0xff, d.backlight & 0xff, ...u16be(d.chargingPowerSetting)];
   return buildResponse(
     Cmd.System,
@@ -115,18 +120,34 @@ export function encodeSystem(d: SystemFrameInput): Bytes {
 export interface BatteryFrameInput {
   soc: number;
   temperaturesC: number[];
-  /** Optional filler for bytes 1..28 (unknown fields on the real device). */
-  reserved?: number[];
+  sohPct?: number;
+  /** Battery current in A (negative = discharging). */
+  currentA?: number;
+  cellVoltagesV?: number[];
 }
 
+/** Same layout as a real MGI032GR1HEU (53-byte payload with one temperature and one cell). */
 export function encodeBattery(d: BatteryFrameInput): Bytes {
   const head = new Uint8Array(30);
   head[0] = Math.max(0, Math.min(100, Math.round(d.soc)));
-  (d.reserved ?? []).slice(0, 28).forEach((b, i) => (head[i + 1] = b & 0xff));
+  head[1] = d.sohPct ?? 100;
+  head[5] = 0x01;
+  const cur = Math.round((d.currentA ?? 0) * 100) | 0;
+  head[6] = (cur >>> 24) & 0xff;
+  head[7] = (cur >>> 16) & 0xff;
+  head[8] = (cur >>> 8) & 0xff;
+  head[9] = cur & 0xff;
   head[29] = d.temperaturesC.length;
+  const cells = d.cellVoltagesV ?? [];
   return buildResponse(
     Cmd.Battery,
-    concatBytes(head, ...d.temperaturesC.map((t) => i16be(t * 10))),
+    concatBytes(
+      head,
+      ...d.temperaturesC.map((t) => i16be(t * 10)),
+      new Uint8Array(18),
+      cells.length ? [cells.length] : [],
+      ...cells.map((v) => u16be(v * 1000)),
+    ),
   );
 }
 

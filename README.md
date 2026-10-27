@@ -138,17 +138,31 @@ Details from the bundle that the original brief didn't capture:
 
 **Out of scope:** OTA firmware updates (`YC-OTA-START` … `YC-OTA-RES`) are deliberately not implemented. A failed flash could brick the station, and the firmware files come from the vendor's cloud.
 
-## Unverified (no hardware was available)
+## Confirmed on a real device
 
-Everything was built and tested against the simulator, which encodes frames from the documented layout. These points still need a real device:
+Tested with a real **MGI032GR1HEU** (BLE name `YIchu:<wifi-mac>`, firmware 0.3.0 / inverter 1.7.0) over Chrome on Windows:
 
-- **Response CRC coverage.** Requests are verified against the app's vectors. For responses we *assume* CRC-16/Modbus over all preceding bytes, low byte first. A mismatch only logs a warning (shown in the raw console); the frame is kept.
-- **The `00 10` request header bytes** and **response bytes 2–3** have unknown meaning. The simulator echoes `00 10`.
-- **Units of `remainUsableTime`** (`51`/`ab` word 0) are treated as minutes, and we assume `0` means "not discharging".
-- **The `0C` serial**: we read it as a `fa` TLV and fall back to the app's `split('fa')` approach.
-- **Frame period** of `50`/`51`/`53` (the simulator uses 1–2 s) and **which service UUID** the station exposes.
-- **Battery capacity presets** are guesses (`MGI106*` → 1024 Wh, `MGI032*` → 320 Wh) and can be overridden in Settings.
-- **Chrome's MTU.** Chrome negotiates the MTU itself; pages can't request 500 like the app does. Long notifications are reassembled, but if the station truncates instead of splitting them, frames will be cut short.
+- Connect flow, ASCII `SN`/`VER` replies, `0C`/`0A`, and the streamed `50`/`51`/`53` frames all decode correctly. The device sends all three about once a second.
+- **Response CRC** is CRC-16/Modbus over every preceding byte, low byte first. The response header bytes 2–3 are `00 10`, the same as in requests.
+- **Extra `53` fields** that the original app ignores:
+  - byte 1: state of health (100);
+  - bytes 6–9: i32 BE current × 0.01 A (−2.18 A while delivering ~70 W AC);
+  - a trailing `<count><u16 mV>` block: one cell voltage of 3.314 V, which looks like LFP.
+
+  No capacity field is sent.
+- **`51` block `ac`** holds temperatures ×0.1 °C: `[27.4, 31.8, 46.6, 46.6, 34.5]`. Word 0 equals the battery temperature; the others are probably inverter/MOSFET sensors.
+- **`remainUsableTime` is always 0** on this firmware, so the station's own runtime estimate is hidden.
+- **An undocumented `52` frame** (36 bytes, almost all zero) is also streamed and is shown as a generic frame.
+- **A lost header was seen once:** a `51` frame arrived without its leading `57 4C`. The assembler restores it, but only if the repaired frame's CRC is valid.
+- **Capacity.** At ~69 W AC, one full 1 % SOC step (84 → 83 %) took 8.8 min and ~10.1 Wh at the outlet. That means a ~1 kWh pack, so `MGI032*` now defaults to 1024 Wh.
+- **The BMS SOC already excludes the reserve**, so the usable-capacity factor now defaults to 1.0. Saved settings that still had the old 0.9 are migrated.
+
+## Still unverified
+
+- The meaning of the `00 10` header bytes.
+- `MGI106*` capacity and charge limit (still guesses, overridable in Settings).
+- Which service UUID other firmware versions expose (the station above was found with the widened candidate list).
+- How Chrome's MTU interacts with other stations.
 
 ## Known Web Bluetooth limitations
 

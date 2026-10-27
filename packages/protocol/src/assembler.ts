@@ -1,3 +1,4 @@
+import { crc16Modbus } from './crc';
 import { bytesToHex, concatBytes, readU16be, type Bytes } from './hex';
 
 /**
@@ -46,6 +47,14 @@ export class FrameAssembler {
         this.buffer = b.slice(total);
         continue;
       }
+      // Seen on a real device: a 51 frame arrived without its leading `57 4C`. Restore it, but
+      // only when the CRC of the repaired frame checks out.
+      const repaired = repairHeaderless(b);
+      if (repaired) {
+        this.onFrame(bytesToHex(repaired));
+        this.buffer = b.slice(repaired.length - 2);
+        continue;
+      }
       // ASCII or unknown: emit the whole chunk.
       this.onFrame(bytesToHex(b));
       this.buffer = new Uint8Array(0);
@@ -55,4 +64,14 @@ export class FrameAssembler {
 
 function isFrameStart(b: Bytes): boolean {
   return (b[0] === 0x57 && b[1] === 0x4c) || (b[0] === 0x59 && b[1] === 0x49);
+}
+
+function repairHeaderless(b: Bytes): Bytes | null {
+  if (b.length < 7 || b[0] !== 0x00 || b[1] !== 0x10) return null;
+  const candidate = concatBytes([0x57, 0x4c], b);
+  const total = 7 + readU16be(candidate, 5) + 2;
+  if (candidate.length < total) return null;
+  const frame = candidate.subarray(0, total);
+  const crc = crc16Modbus(frame, 0, total - 2);
+  return frame[total - 2] === (crc & 0xff) && frame[total - 1] === crc >> 8 ? frame : null;
 }

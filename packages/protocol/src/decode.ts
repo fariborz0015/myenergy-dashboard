@@ -160,6 +160,10 @@ export function parseSystem(payloadHex: string): SystemData {
     out.timersSet = timers(3);
     out.timersRemaining = timers(8);
   }
+  const ac = blocks['ac'];
+  if (ac !== undefined && ac.length >= 4) {
+    out.internalTempsC = words(ac).map((w) => (w & 0x8000 ? w - 0x10000 : w) / 10);
+  }
   const ba = blocks['ba'];
   if (ba !== undefined) {
     // value bytes: [0] unknown, [1] light mode, [2] backlight, [3..4] charge power u16
@@ -170,10 +174,17 @@ export function parseSystem(payloadHex: string): SystemData {
   return out;
 }
 
-/** cmd 0x53: byte 0 = SOC, byte 29 = sensor count N, then N × i16 BE (0.1 °C). */
+/**
+ * cmd 0x53: byte 0 = SOC, byte 29 = sensor count N, then N × i16 BE (0.1 °C) — as in the app.
+ * Observed on a real device (53-byte payload): byte 1 = 100 (state of health), bytes 6..9 =
+ * i32 BE current in 0.01 A (−218 while delivering ~70 W AC), and the payload ends with
+ * `01 0cf2` = one cell voltage of 3.314 V. Those extra fields are best-effort.
+ */
 export function parseBattery(payloadHex: string): BatteryData {
   const bytes = hexToBytes(payloadHex.length % 2 ? payloadHex.slice(0, -1) : payloadHex);
   const soc = bytes[0] ?? 0;
+  const sohPct = bytes.length > 1 && bytes[1]! <= 100 ? bytes[1]! : null;
+  const currentA = bytes.length >= 10 ? (((bytes[6]! << 24) | (bytes[7]! << 16) | (bytes[8]! << 8) | bytes[9]!) | 0) / 100 : null;
   const n = bytes[29] || 1;
   const temperaturesC: number[] = [];
   for (let i = 0; i < n; i++) {
@@ -184,7 +195,20 @@ export function parseBattery(payloadHex: string): BatteryData {
   const tempC = temperaturesC.length
     ? Math.round((temperaturesC.reduce((a, b) => a + b, 0) / temperaturesC.length) * 10) / 10
     : null;
-  return { soc, tempC, temperaturesC };
+  return { soc, tempC, temperaturesC, sohPct, currentA, cellVoltagesV: trailingCells(bytes, 30 + n * 2) };
+}
+
+/** Finds a trailing `<count><u16 mV × count>` block after `minStart`; plausible cell voltages only. */
+function trailingCells(bytes: Uint8Array, minStart: number): number[] {
+  for (let count = 1; count <= 32; count++) {
+    const at = bytes.length - 1 - count * 2;
+    if (at < minStart) break;
+    if (bytes[at] !== count) continue;
+    const cells: number[] = [];
+    for (let i = 0; i < count; i++) cells.push(((bytes[at + 1 + i * 2]! << 8) | bytes[at + 2 + i * 2]!) / 1000);
+    if (cells.every((v) => v >= 1.5 && v <= 4.5)) return cells;
+  }
+  return [];
 }
 
 // ---------------------------------------------------------------- frame level

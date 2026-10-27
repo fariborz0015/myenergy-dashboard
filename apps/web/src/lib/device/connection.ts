@@ -384,6 +384,7 @@ class DeviceConnection {
           ...(d.lightWorkMode !== undefined ? { lightWorkMode: d.lightWorkMode } : {}),
           ...(d.backlight !== undefined ? { backlight: d.backlight } : {}),
           ...(d.chargingPowerSetting !== undefined ? { chargeLimitW: d.chargingPowerSetting } : {}),
+          ...(d.internalTempsC ? { internalTempsC: d.internalTempsC } : {}),
           lastFrameAt: now,
         });
         if (d.power) {
@@ -393,7 +394,15 @@ class DeviceConnection {
         break;
       }
       case 'battery':
-        s.patchTelemetry({ soc: f.data.soc, tempC: f.data.tempC, temperaturesC: f.data.temperaturesC, lastFrameAt: now });
+        s.patchTelemetry({
+          soc: f.data.soc,
+          tempC: f.data.tempC,
+          temperaturesC: f.data.temperaturesC,
+          sohPct: f.data.sohPct,
+          batteryCurrentA: f.data.currentA,
+          cellVoltagesV: f.data.cellVoltagesV,
+          lastFrameAt: now,
+        });
         break;
       case 'ack':
         if (!f.success) console.warn('[myenergy] device rejected command', f.frame.cmd.toString(16));
