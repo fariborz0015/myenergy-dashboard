@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// A power station seen by any browser. Identified by its device serial (deviceSn).
+model Device {
+  id         String   @id @default(cuid())
+  sn         String   @unique
+  gatewaySn  String?
+  modelCode  String?
+  deptCode   String?
+  name       String?
+  capacityWh Int?
+  /// JSON object with firmware / hardware versions
+  versions   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  lastSeenAt DateTime @default(now())
+
+  samples  TelemetrySample[]
+  sessions Session[]
+}
+
+/// Telemetry averaged into short buckets (see TELEMETRY_STORE_BUCKET_S).
+model TelemetrySample {
+  id        Int      @id @default(autoincrement())
+  deviceId  String
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  ts        DateTime
+  soc       Float
+  tempC     Float?
+  inW       Float
+  outW      Float
+  acInW     Float    @default(0)
+  dcInW     Float    @default(0)
+  acOutW    Float    @default(0)
+  dcOutW    Float    @default(0)
+  usbAW     Float    @default(0)
+  usbCW     Float    @default(0)
+  carW      Float    @default(0)
+  wirelessW Float    @default(0)
+  /// cmd 0x50 bitmap at the end of the bucket
+  switches  Int      @default(0)
+  /// number of raw samples averaged into this row
+  n         Int      @default(1)
+
+  @@unique([deviceId, ts])
+  @@index([deviceId, ts])
+}
+
+/// One connection of a browser to a device.
+model Session {
+  id        String    @id @default(cuid())
+  deviceId  String
+  device    Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  transport String    @default("ble")
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  whIn      Float     @default(0)
+  whOut     Float     @default(0)
+
+  @@index([deviceId, startedAt])
+}
+
+/// Key/value user settings; `value` is JSON.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model AppliancePreset {
+  id        String   @id @default(cuid())
+  name      String
+  watts     Float
+  dutyPct   Float    @default(100)
+  rail      String   @default("ac")
+  enabled   Boolean  @default(false)
+  icon      String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
