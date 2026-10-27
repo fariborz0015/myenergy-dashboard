@@ -220,7 +220,7 @@ export function effectiveSwitches(s: Pick<DeviceStore, 'telemetry' | 'pending'>,
 }
 
 export function displayName(info: DeviceInfo): string {
-  if (info.bleName) return info.bleName.replace(/^YIchu[-_ ]?/i, 'INFINITY 1000 ').trim();
+  if (info.bleName) return info.bleName.replace(/^YIchu[-_ :]*/i, 'INFINITY 1000 ').trim();
   if (info.deviceSn) return `INFINITY 1000 ${info.deviceSn.slice(-4)}`;
   return 'INFINITY 1000';
 }
