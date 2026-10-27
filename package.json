@@ -1,0 +1,24 @@
+{
+  "name": "myenergy",
+  "private": true,
+  "version": "0.1.0",
+  "description": "MyEnergy Dashboard: Web Bluetooth dashboard for the YIchu / INFINITY 1000 portable power station",
+  "packageManager": "pnpm@10.28.1",
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test:e2e": "pnpm --filter @myenergy/web test:e2e",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.8",
+    "typescript": "~5.9.3"
+  }
+}
