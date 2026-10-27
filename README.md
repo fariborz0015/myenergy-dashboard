@@ -97,10 +97,14 @@ Web Bluetooth only exposes services that the page lists in `optionalServices`. T
 
 If the station connects but **no service / characteristic appears** (Dashboard → *Details* shows "No services were accessible"):
 
-1. Install **nRF Connect** on a phone, scan, and connect to `YIchu…`.
+1. Find the UUID, either way:
+   - **Desktop Chrome/Edge:** open `chrome://bluetooth-internals/#devices` → **Start scan** → **Inspect** next to `YIchu…`. This page lists *all* services.
+   - **Phone:** install **nRF Connect**, scan, and connect to `YIchu…`.
 2. Note the UUID of the service whose characteristic has **Read, Write and Notify**.
-3. Paste it into **Settings → Connection → Custom service UUID**. Both forms work: `fff0` or a full 128-bit UUID.
+3. Paste it into **Settings → Connection → Custom service UUIDs**. Formats: `fff0` or a full 128-bit UUID; separate several with commas.
 4. Reconnect. In **Details** you can also pin a different characteristic manually; the choice is remembered.
+
+When this happens the connect screen lists the services Chrome did expose and walks you through these steps. With Chrome's *Experimental Web Platform features* flag enabled, the app also listens to the station's advertisement for a few seconds. Any service UUIDs it hears are saved to Settings automatically; press **Try again** and pick the station once more.
 
 ## Protocol notes (from the reverse-engineered app)
 

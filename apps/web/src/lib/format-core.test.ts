@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { makeFormatter } from './format-core';
-import { normalizeServiceUuid } from './uuid';
+import { isValidServiceUuidList, normalizeServiceUuid, parseServiceUuids, uuidKey } from './uuid';
 
 const units = { h: 'h', m: 'm', d: 'd', w: 'W', kw: 'kW', wh: 'Wh', kwh: 'kWh' };
 
@@ -46,5 +46,19 @@ describe('normalizeServiceUuid', () => {
   it('rejects garbage', () => {
     expect(normalizeServiceUuid('')).toBeNull();
     expect(normalizeServiceUuid('hello')).toBeNull();
+  });
+});
+
+describe('service UUID lists', () => {
+  it('parses comma/space separated lists', () => {
+    expect(parseServiceUuids('fff0, 00ff  abf0;bad')).toEqual([0xfff0, 0x00ff, 0xabf0]);
+    expect(isValidServiceUuidList('fff0, 00ff')).toBe(true);
+    expect(isValidServiceUuidList('fff0, nope')).toBe(false);
+    expect(isValidServiceUuidList('')).toBe(true);
+  });
+  it('builds comparable keys', () => {
+    expect(uuidKey(0xff)).toBe('00ff');
+    expect(uuidKey('0000FFF0-0000-1000-8000-00805F9B34FB')).toBe('fff0');
+    expect(uuidKey('6E400001-B5A3-F393-E0A9-E50E24DCCA9E')).toBe('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
   });
 });

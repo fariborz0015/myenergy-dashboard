@@ -2,6 +2,7 @@
 
 import { Listeners, type DeviceTransport } from '@myenergy/protocol';
 import type { GattDetails, GattServiceInfo } from '@/lib/store/device-store';
+import { uuidKey } from '@/lib/uuid';
 
 /**
  * Web Bluetooth only lets a page touch services listed in `optionalServices`, and the
@@ -10,20 +11,53 @@ import type { GattDetails, GattServiceInfo } from '@/lib/store/device-store';
  * modules commonly use, plus whatever the user typed into settings.
  */
 export const CANDIDATE_SERVICES: BluetoothServiceUUID[] = [
+  // Vendor 16-bit services used by serial-over-BLE modules (HM-10/JDY/CC254x/BK/AC6xxx…)
   0xfff0,
   0xffe0,
   0xffe5,
   0xff00,
   0xff10,
   0xffd0,
+  0xffc0,
+  0xffb0,
+  0xffa0,
+  0xff90,
   0xae00,
+  0xae30,
+  0xfee0,
   0xfee7,
+  0x18f0,
+  // ESP32 / ESP-IDF examples (gatt_server 0x00FF/0x00EE, spp_server 0xABF0, BluFi 0xFFFF)
+  0x00ff,
+  0x00ee,
+  0xabf0,
+  0xffff,
+  // Standard services (useful for the details panel)
   0x1800,
   0x1801,
   0x180a,
   0x180f,
+  // 128-bit transparent-UART services
   '6e400001-b5a3-f393-e0a9-e50e24dcca9e', // Nordic UART
+  '49535343-fe7d-4ae5-8fa9-9fafd205e455', // Microchip/ISSC transparent UART
+  '0783b03e-8535-b5a0-7140-a304d2495cb7', // Dialog SPS
+  '569a1101-b87f-490c-92cb-11ba5ea5167c', // Laird VSP
+  '2456e1b9-26e2-8f83-e744-f34f01e9d701', // u-blox SPS
+  '00010203-0405-0607-0809-0a0b0c0d1910', // Telink
 ];
+
+/** Thrown when no usable characteristic is visible; carries what *was* visible for diagnosis. */
+export class NoCharacteristicError extends Error {
+  constructor(
+    readonly accessible: string[],
+    readonly advertised: string[],
+  ) {
+    super('No characteristic with write + notify found in the accessible services.');
+    this.name = 'NoCharacteristicError';
+  }
+}
+
+const STANDARD_SERVICES = new Set(['1800', '1801', '180a', '180f']);
 
 export const NAME_PREFIX = 'YIchu';
 
@@ -89,11 +123,42 @@ export class WebBluetoothTransport implements DeviceTransport {
     await this.discover(server);
     const chosen = this.pick();
     if (!chosen) {
-      throw new Error(
-        'No characteristic with write + notify found in the accessible services. Add your device’s service UUID in Settings → Connection.',
-      );
+      const accessible = (this.details?.services ?? []).map((s) => uuidKey(s.uuid));
+      // The station stops advertising while connected, so disconnect before listening.
+      this.manualDisconnect = true;
+      if (this.device.gatt?.connected) this.device.gatt.disconnect();
+      const advertised = await this.probeAdvertisedServices();
+      throw new NoCharacteristicError(accessible, advertised);
     }
     await this.use(chosen);
+  }
+
+  /**
+   * Reads the service UUIDs the station advertises (`watchAdvertisements`, Chrome with
+   * "Experimental Web Platform features"). Returns [] when unsupported or nothing was heard.
+   */
+  private async probeAdvertisedServices(timeoutMs = 5000): Promise<string[]> {
+    const d = this.device;
+    if (!d || typeof d.watchAdvertisements !== 'function') return [];
+    const found = new Set<string>();
+    const onAdv = (e: BluetoothAdvertisingEvent) => {
+      for (const u of e.uuids ?? []) {
+        const s = uuidKey(String(u));
+        if (!STANDARD_SERVICES.has(s)) found.add(s);
+      }
+    };
+    const abort = new AbortController();
+    d.addEventListener('advertisementreceived', onAdv);
+    try {
+      await d.watchAdvertisements({ signal: abort.signal });
+      await new Promise((r) => setTimeout(r, timeoutMs));
+    } catch {
+      // unsupported / not permitted
+    } finally {
+      d.removeEventListener('advertisementreceived', onAdv);
+      abort.abort();
+    }
+    return [...found];
   }
 
   private async discover(server: BluetoothRemoteGATTServer): Promise<void> {

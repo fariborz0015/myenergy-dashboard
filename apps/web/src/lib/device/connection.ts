@@ -15,10 +15,11 @@ import {
   type SwitchName,
   type TimerName,
 } from '@myenergy/protocol';
-import { WebBluetoothTransport } from '@/lib/ble/web-bluetooth-transport';
+import { NoCharacteristicError, WebBluetoothTransport } from '@/lib/ble/web-bluetooth-transport';
 import { watchLive } from '@/lib/live';
 import { useDevice, type DeviceInfo, type Telemetry } from '@/lib/store/device-store';
-import { normalizeServiceUuid, useSettings } from '@/lib/store/settings-store';
+import { useSettings } from '@/lib/store/settings-store';
+import { parseServiceUuids, uuidKey } from '@/lib/uuid';
 
 /** Mirrors the original app's `maxContectSize = 3`. */
 const MAX_RECONNECT_ATTEMPTS = 3;
@@ -85,10 +86,10 @@ class DeviceConnection {
       this.transport = new SimulatorTransport();
       store.setStatus('connecting');
     } else {
-      const custom = normalizeServiceUuid(useSettings.getState().customServiceUuid);
+      const custom = parseServiceUuids(useSettings.getState().customServiceUuid);
       this.transport = new WebBluetoothTransport({
         acceptAllDevices: opts.acceptAllDevices,
-        extraServices: custom === null ? [] : [custom],
+        extraServices: custom,
         preferred: readPreferred(),
         onPhase: (p) => gen === this.generation && store.setStatus(p === 'requesting' ? 'requesting' : 'connecting'),
       });
@@ -99,6 +100,7 @@ class DeviceConnection {
     } catch (e) {
       if (gen !== this.generation) return false;
       const msg = asError(e);
+      if (e instanceof NoCharacteristicError) this.recordDiagnostics(e);
       this.teardown();
       useDevice.getState().setStatus(msg === 'cancelled' ? 'idle' : 'error', msg === 'cancelled' ? null : msg);
       if (msg === 'cancelled') useDevice.getState().setMode(null);
@@ -107,6 +109,21 @@ class DeviceConnection {
     if (gen !== this.generation) return false;
     this.onConnected();
     return true;
+  }
+
+  /**
+   * Keep what the browser could see, and remember advertised service UUIDs in settings so
+   * the next attempt includes them in `optionalServices`.
+   */
+  private recordDiagnostics(e: NoCharacteristicError) {
+    const settings = useSettings.getState();
+    const known = new Set(parseServiceUuids(settings.customServiceUuid).map(uuidKey));
+    const learned = e.advertised.filter((u) => !known.has(u));
+    if (learned.length) {
+      const list = [settings.customServiceUuid.trim(), ...learned].filter(Boolean).join(', ');
+      settings.update({ customServiceUuid: list });
+    }
+    useDevice.getState().setBleDiagnostics({ accessible: e.accessible, advertised: e.advertised, learned });
   }
 
   /** Read-only view of a device another browser is publishing through the API. */

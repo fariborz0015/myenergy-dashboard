@@ -93,7 +93,18 @@
     "error": {
       "title": "Couldn't connect",
       "help": "Make sure the station is switched on and nearby, Bluetooth is enabled, and no phone is currently connected to it.",
-      "retry": "Try again"
+      "retry": "Try again",
+      "noCharTitle": "Connected, but the station's data channel isn't visible",
+      "noCharBody": "Chrome only shows a page the Bluetooth services it asked for up front, and the station's service isn't in our list yet. Find its UUID once and add it in Settings.",
+      "accessible": "Services Chrome exposed",
+      "none": "none",
+      "learned": "Found in the station's advertisement and saved to Settings — press Try again and pick the station once more:",
+      "findTitle": "Find the service UUID (takes a minute):",
+      "find1": "Open a new tab and go to",
+      "find2": "Devices → Start scan, then click Inspect on the YIchu… station.",
+      "find3": "Open each service; note the one with a characteristic marked Read, Write and Notify.",
+      "find4": "Paste that service UUID into Settings → Connection → Custom service UUID, then Try again.",
+      "openSettings": "Open Settings"
     },
     "watch": {
       "title": "Watch a station live",
@@ -394,9 +405,9 @@
     "socCritical": "Critical battery below",
     "tempHigh": "High temperature above",
     "connection": "Connection",
-    "uuid": "Custom service UUID",
-    "uuidHint": "If your station doesn't connect, read its service UUID with nRF Connect on a phone and paste it here (fff0 or a full UUID). It is added to optionalServices.",
-    "uuidInvalid": "Use a 16-bit hex value (fff0) or a full 128-bit UUID.",
+    "uuid": "Custom service UUIDs",
+    "uuidHint": "If your station connects but shows no data, open chrome://bluetooth-internals (or nRF Connect on a phone), find the service whose characteristic has Read + Write + Notify, and paste its UUID here. Several are allowed, separated by commas (fff0 or full UUIDs). They are added to optionalServices.",
+    "uuidInvalid": "Use 16-bit hex values (fff0) or full 128-bit UUIDs, separated by commas.",
     "cloudSync": "Sync to API",
     "cloudSyncHint": "Upload telemetry and stream live data to {url} when it is reachable.",
     "apiStatus": "API",

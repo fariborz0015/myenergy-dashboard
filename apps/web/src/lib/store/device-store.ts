@@ -64,6 +64,16 @@ export interface GattDetails {
   selected: { service: string; characteristic: string } | null;
 }
 
+/** What the browser could see when no usable characteristic was found. */
+export interface BleDiagnostics {
+  /** Services Chrome exposed (only those listed in optionalServices). */
+  accessible: string[];
+  /** Service UUIDs heard in the station's advertisement, if the browser supports it. */
+  advertised: string[];
+  /** Advertised UUIDs newly added to settings for the next attempt. */
+  learned: string[];
+}
+
 export interface PendingSwitch {
   value: boolean;
   sentAt: number;
@@ -112,6 +122,7 @@ interface DeviceStore {
   session: { startedAt: number | null; whIn: number; whOut: number };
   today: { date: string; whIn: number; whOut: number };
   wifiReply: string | null;
+  bleDiagnostics: BleDiagnostics | null;
 
   setStatus: (status: ConnStatus, error?: string | null) => void;
   setMode: (mode: ConnMode | null) => void;
@@ -126,6 +137,7 @@ interface DeviceStore {
   setGatt: (g: GattDetails | null) => void;
   setEnergy: (session: DeviceStore['session'], today: DeviceStore['today']) => void;
   setWifiReply: (r: string | null) => void;
+  setBleDiagnostics: (d: BleDiagnostics | null) => void;
   resetDevice: () => void;
 }
 
@@ -146,6 +158,7 @@ export const useDevice = create<DeviceStore>()((set) => ({
   session: { startedAt: null, whIn: 0, whOut: 0 },
   today: { date: '', whIn: 0, whOut: 0 },
   wifiReply: null,
+  bleDiagnostics: null,
 
   setStatus: (status, error = null) => set({ status, error }),
   setMode: (mode) => set({ mode }),
@@ -178,6 +191,7 @@ export const useDevice = create<DeviceStore>()((set) => ({
   setGatt: (gatt) => set({ gatt }),
   setEnergy: (session, today) => set({ session, today }),
   setWifiReply: (wifiReply) => set({ wifiReply }),
+  setBleDiagnostics: (bleDiagnostics) => set({ bleDiagnostics }),
   resetDevice: () =>
     set({
       info: EMPTY_INFO,
@@ -187,6 +201,7 @@ export const useDevice = create<DeviceStore>()((set) => ({
       gatt: null,
       session: { startedAt: null, whIn: 0, whOut: 0 },
       wifiReply: null,
+      bleDiagnostics: null,
     }),
 }));
 

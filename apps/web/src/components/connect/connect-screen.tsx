@@ -11,7 +11,9 @@ import {
   Bluetooth,
   BluetoothSearching,
   Calculator,
+  Check,
   CircleAlert,
+  Copy,
   Eye,
   LoaderCircle,
   ShieldCheck,
@@ -181,19 +183,88 @@ export function ConnectScreen() {
 
 function ConnectError({ message, onRetry }: { message: string; onRetry: () => void }) {
   const t = useTranslations('connect.error');
+  const diag = useDevice((s) => s.bleDiagnostics);
   return (
     <div role="alert" className="flex max-w-lg flex-col gap-3 rounded-2xl border border-danger/30 bg-danger/8 p-4">
       <div className="flex items-start gap-3">
         <CircleAlert className="mt-0.5 size-5 shrink-0 text-danger" />
-        <div className="flex flex-col gap-1">
-          <p className="font-medium">{t('title')}</p>
-          <p className="text-sm break-words text-muted-foreground">{message}</p>
-          <p className="text-sm text-muted-foreground">{t('help')}</p>
+        <div className="flex min-w-0 flex-col gap-1">
+          <p className="font-medium">{diag ? t('noCharTitle') : t('title')}</p>
+          <p className="text-sm break-words text-muted-foreground">{diag ? t('noCharBody') : message}</p>
+          {!diag && <p className="text-sm text-muted-foreground">{t('help')}</p>}
         </div>
       </div>
-      <Button variant="outline" size="sm" className="w-fit" onClick={onRetry}>
-        {t('retry')}
-      </Button>
+      {diag && <BleDiagnosticsPanel diag={diag} />}
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" className="w-fit" onClick={onRetry}>
+          {t('retry')}
+        </Button>
+        {diag && (
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/settings">{t('openSettings')}</Link>
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function UuidChips({ list }: { list: string[] }) {
+  return (
+    <span className="flex flex-wrap gap-1" dir="ltr">
+      {list.map((u) => (
+        <code key={u} className="rounded-md bg-muted px-1.5 py-0.5 font-mono text-[11px]">
+          {u}
+        </code>
+      ))}
+    </span>
+  );
+}
+
+function BleDiagnosticsPanel({ diag }: { diag: NonNullable<ReturnType<typeof useDevice.getState>['bleDiagnostics']> }) {
+  const t = useTranslations('connect.error');
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText('chrome://bluetooth-internals/#devices');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard blocked
+    }
+  };
+  return (
+    <div className="flex flex-col gap-3 rounded-xl bg-card/60 p-3 text-sm">
+      <div className="flex flex-col gap-1">
+        <span className="text-xs text-muted-foreground">{t('accessible')}</span>
+        {diag.accessible.length ? <UuidChips list={diag.accessible} /> : <span className="text-xs">{t('none')}</span>}
+      </div>
+      {diag.learned.length > 0 ? (
+        <p className="rounded-lg bg-charge/10 px-3 py-2 text-xs text-charge">
+          {t('learned')} <UuidChips list={diag.learned} />
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <span className="text-xs font-medium">{t('findTitle')}</span>
+          <ol className="flex list-decimal flex-col gap-1 ps-5 text-xs text-muted-foreground">
+            <li>
+              {t('find1')}{' '}
+              <button
+                type="button"
+                onClick={copy}
+                className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-mono text-[11px] text-foreground outline-none hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/40"
+                dir="ltr"
+              >
+                chrome://bluetooth-internals
+                {copied ? <Check className="size-3 text-charge" /> : <Copy className="size-3" />}
+              </button>
+            </li>
+            <li>{t('find2')}</li>
+            <li>{t('find3')}</li>
+            <li>{t('find4')}</li>
+          </ol>
+        </div>
+      )}
     </div>
   );
 }

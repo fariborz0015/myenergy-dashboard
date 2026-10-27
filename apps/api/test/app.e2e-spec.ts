@@ -131,6 +131,7 @@ describe('MyEnergy API (e2e)', () => {
       await http().put('/settings').send({ effAc: 3 }).expect(400);
       await http().put('/settings').send({ customServiceUuid: 'not-a-uuid' }).expect(400);
       await http().put('/settings').send({ customServiceUuid: 'fff0' }).expect(200);
+      await http().put('/settings').send({ customServiceUuid: 'fff0, 00ff 6e400001-b5a3-f393-e0a9-e50e24dcca9e' }).expect(200);
     });
   });
 

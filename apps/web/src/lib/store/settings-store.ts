@@ -16,7 +16,7 @@ export interface Settings {
   tempHighC: number;
   tempUnit: 'c' | 'f';
   persianDigits: boolean;
-  /** Extra GATT service UUID added to `optionalServices` (16-bit hex or full UUID). */
+  /** Extra GATT service UUIDs for `optionalServices`: comma-separated 16-bit hex or full UUIDs. */
   customServiceUuid: string;
   /** Mirror telemetry to the API when it is reachable. */
   cloudSync: boolean;
@@ -65,5 +65,3 @@ export function energyConfigOf(s: Settings, modelCode: string | null | undefined
     effDc: s.effDc,
   };
 }
-
-export { normalizeServiceUuid } from '@/lib/uuid';

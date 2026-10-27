@@ -13,6 +13,11 @@ import {
 } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
 
+/** One service UUID: 16-bit (`fff0`/`0xfff0`), 32-bit, or full 128-bit. */
+const UUID = String.raw`(?:(?:0x)?[0-9a-f]{4}|[0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?)`;
+/** Empty, or UUIDs separated by commas / semicolons / whitespace. */
+const UUID_LIST = new RegExp(String.raw`^\s*(?:${UUID}(?:[\s,;]+${UUID})*)?\s*$`, 'i');
+
 /** User settings mirrored from the browser. Every field is optional; PUT merges. */
 export class SettingsDto {
   @ApiPropertyOptional({ example: 1024 }) @IsOptional() @IsNumber() @Min(50) @Max(100000)
@@ -51,11 +56,11 @@ export class SettingsDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean()
   persianDigits?: boolean;
 
-  @ApiPropertyOptional({ example: '0000fff0-0000-1000-8000-00805f9b34fb' })
+  @ApiPropertyOptional({ example: 'fff0, 0000abf0-0000-1000-8000-00805f9b34fb', description: 'Comma-separated service UUIDs' })
   @IsOptional()
   @IsString()
-  @MaxLength(36)
-  @Matches(/^$|^(0x)?[0-9a-fA-F]{4}$|^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)
+  @MaxLength(400)
+  @Matches(UUID_LIST)
   customServiceUuid?: string;
 }
 

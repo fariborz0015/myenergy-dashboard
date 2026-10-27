@@ -18,7 +18,8 @@ import { Switch } from '@/components/ui/switch';
 import { API_URL, useApi } from '@/lib/api';
 import { useFmt } from '@/lib/format';
 import { useDevice } from '@/lib/store/device-store';
-import { normalizeServiceUuid, useSettings } from '@/lib/store/settings-store';
+import { useSettings } from '@/lib/store/settings-store';
+import { isValidServiceUuidList } from '@/lib/uuid';
 import { cn } from '@/lib/utils';
 
 function Section({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
@@ -61,7 +62,7 @@ export function SettingsView() {
   const preset = presetForModel(modelCode);
   const autoCapacity = preset?.capacityWh ?? DEFAULT_ENERGY_CONFIG.capacityWh;
   const [uuid, setUuid] = useState(s.customServiceUuid);
-  const uuidValid = uuid.trim() === '' || normalizeServiceUuid(uuid) !== null;
+  const uuidValid = isValidServiceUuidList(uuid);
   useEffect(() => setMounted(true), []);
 
   const setLocale = (next: string) => {
@@ -128,7 +129,7 @@ export function SettingsView() {
               <Input
                 id="custom-uuid"
                 value={uuid}
-                placeholder="fff0"
+                placeholder="fff0, 0000abf0-…"
                 spellCheck={false}
                 autoCapitalize="none"
                 aria-invalid={!uuidValid}
