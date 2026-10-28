@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { deviceConnection } from '@/lib/device/connection';
 import { startSync } from '@/lib/device/sync';
 import { useActiveAlerts } from '@/lib/hooks/use-alerts';
 import { useFmt } from '@/lib/format';
@@ -10,6 +11,9 @@ import { useFmt } from '@/lib/format';
 /** Mounted once: background API sync and alert toasts. */
 export function DeviceRuntime() {
   useEffect(() => startSync(), []);
+  useEffect(() => {
+    void deviceConnection.resume();
+  }, []);
   useAlertToasts();
   return null;
 }

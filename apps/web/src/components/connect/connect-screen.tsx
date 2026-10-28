@@ -28,6 +28,7 @@ import { useBleSupport } from '@/lib/hooks/use-ble-support';
 import { displayName, useDevice } from '@/lib/store/device-store';
 import { cn } from '@/lib/utils';
 import { HeroVisual } from './hero-visual';
+import { ReconnectCard } from './reconnect-card';
 
 /** CSS entrance animation: runs at first paint, before hydration, and honours reduced motion. */
 const fade = (i: number) => ({
@@ -125,6 +126,7 @@ export function ConnectScreen() {
             </div>
           )}
 
+          <ReconnectCard />
           {status === 'error' && error && <ConnectError message={error} onRetry={() => connect(mode === 'demo' ? 'demo' : 'ble')} />}
           {support.checked && !bleReady && <UnsupportedNotice />}
 

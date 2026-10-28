@@ -71,6 +71,19 @@ export interface WebBluetoothOptions {
   /** Force a specific characteristic instead of auto-selecting. */
   preferred?: { service: string; characteristic: string } | null;
   onPhase?: (phase: 'requesting' | 'connecting' | 'discovering') => void;
+  /**
+   * Reconnect to this previously-permitted device without showing the chooser (page reload).
+   * Needs `navigator.bluetooth.getDevices()`; throws `ResumeUnavailableError` otherwise.
+   */
+  resumeId?: string;
+}
+
+/** Silent reconnect isn't possible: the user has to pick the device again (needs a click). */
+export class ResumeUnavailableError extends Error {
+  constructor(reason: string) {
+    super(reason);
+    this.name = 'ResumeUnavailableError';
+  }
 }
 
 function props(c: BluetoothRemoteGATTCharacteristic): string[] {
@@ -107,6 +120,15 @@ export class WebBluetoothTransport implements DeviceTransport {
   async connect(): Promise<void> {
     if (!isWebBluetoothAvailable()) throw new Error('Web Bluetooth is not available in this browser');
     this.manualDisconnect = false;
+    if (!this.device && this.opts.resumeId) {
+      this.opts.onPhase?.('connecting');
+      const known = typeof navigator.bluetooth.getDevices === 'function' ? await navigator.bluetooth.getDevices() : [];
+      const found = known.find((d) => d.id === this.opts.resumeId);
+      if (!found) throw new ResumeUnavailableError('Previously used device is not available without the chooser');
+      this.device = found;
+      this.device.addEventListener('gattserverdisconnected', this.onGattDisconnected);
+      await this.waitForAdvertisement();
+    }
     if (!this.device) {
       this.opts.onPhase?.('requesting');
       const optionalServices = [...CANDIDATE_SERVICES, ...(this.opts.extraServices ?? [])];
@@ -131,6 +153,31 @@ export class WebBluetoothTransport implements DeviceTransport {
       throw new NoCharacteristicError(accessible, advertised);
     }
     await this.use(chosen);
+  }
+
+  get deviceId(): string | null {
+    return this.device?.id ?? null;
+  }
+
+  /**
+   * After a reload Chrome only lets us connect once it has seen the device advertise again.
+   * Best effort: returns after the first advertisement or `timeoutMs`.
+   */
+  private async waitForAdvertisement(timeoutMs = 8000): Promise<void> {
+    const d = this.device;
+    if (!d || typeof d.watchAdvertisements !== 'function') return;
+    const abort = new AbortController();
+    await new Promise<void>((resolve) => {
+      const done = () => {
+        d.removeEventListener('advertisementreceived', done);
+        clearTimeout(timer);
+        resolve();
+      };
+      const timer = setTimeout(done, timeoutMs);
+      d.addEventListener('advertisementreceived', done);
+      d.watchAdvertisements({ signal: abort.signal }).catch(done);
+    });
+    abort.abort();
   }
 
   /**

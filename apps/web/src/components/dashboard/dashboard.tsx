@@ -17,6 +17,7 @@ import {
   SlidersHorizontal,
   Wifi,
 } from 'lucide-react';
+import { ReconnectCard } from '@/components/connect/reconnect-card';
 import { StatusDot } from '@/components/layout/connection-pill';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -251,6 +252,7 @@ function EmptyState() {
             <h1 className="text-xl font-semibold">{t('title')}</h1>
             <p className="text-sm text-muted-foreground">{t('body')}</p>
           </div>
+          <ReconnectCard navigate={false} />
           <div className="flex flex-wrap justify-center gap-2">
             <Button variant="energy" asChild>
               <Link href="/">

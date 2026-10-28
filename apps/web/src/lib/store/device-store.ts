@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import type { PowerReadings, SwitchName, SwitchStates, TimerSettings } from '@myenergy/protocol';
+import type { LastDevice } from '@/lib/device/last-device';
 
 export type ConnStatus = 'idle' | 'requesting' | 'connecting' | 'connected' | 'reconnecting' | 'disconnected' | 'error';
 export type ConnMode = 'ble' | 'demo' | 'watch';
@@ -133,6 +134,8 @@ interface DeviceStore {
   today: { date: string; whIn: number; whOut: number };
   wifiReply: string | null;
   bleDiagnostics: BleDiagnostics | null;
+  /** Device to offer for one-click reconnect after a reload. */
+  lastDevice: LastDevice | null;
 
   setStatus: (status: ConnStatus, error?: string | null) => void;
   setMode: (mode: ConnMode | null) => void;
@@ -148,6 +151,7 @@ interface DeviceStore {
   setEnergy: (session: DeviceStore['session'], today: DeviceStore['today']) => void;
   setWifiReply: (r: string | null) => void;
   setBleDiagnostics: (d: BleDiagnostics | null) => void;
+  setLastDevice: (d: LastDevice | null) => void;
   resetDevice: () => void;
 }
 
@@ -169,6 +173,7 @@ export const useDevice = create<DeviceStore>()((set) => ({
   today: { date: '', whIn: 0, whOut: 0 },
   wifiReply: null,
   bleDiagnostics: null,
+  lastDevice: null,
 
   setStatus: (status, error = null) => set({ status, error }),
   setMode: (mode) => set({ mode }),
@@ -202,6 +207,7 @@ export const useDevice = create<DeviceStore>()((set) => ({
   setEnergy: (session, today) => set({ session, today }),
   setWifiReply: (wifiReply) => set({ wifiReply }),
   setBleDiagnostics: (bleDiagnostics) => set({ bleDiagnostics }),
+  setLastDevice: (lastDevice) => set({ lastDevice }),
   resetDevice: () =>
     set({
       info: EMPTY_INFO,

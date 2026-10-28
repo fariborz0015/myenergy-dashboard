@@ -17,6 +17,7 @@ import {
 } from '@myenergy/protocol';
 import { NoCharacteristicError, WebBluetoothTransport } from '@/lib/ble/web-bluetooth-transport';
 import { watchLive } from '@/lib/live';
+import { canResumeSilently, clearLastDevice, readLastDevice, saveLastDevice, type LastDevice } from './last-device';
 import { useDevice, type DeviceInfo, type Telemetry } from '@/lib/store/device-store';
 import { useSettings } from '@/lib/store/settings-store';
 import { parseServiceUuids, uuidKey } from '@/lib/uuid';
@@ -75,8 +76,8 @@ class DeviceConnection {
 
   // ------------------------------------------------------------ lifecycle
 
-  async connect(mode: 'ble' | 'demo', opts: { acceptAllDevices?: boolean } = {}): Promise<boolean> {
-    await this.disconnect();
+  async connect(mode: 'ble' | 'demo', opts: { acceptAllDevices?: boolean; resumeId?: string } = {}): Promise<boolean> {
+    await this.disconnect({ forget: false });
     const store = useDevice.getState();
     store.resetDevice();
     store.setMode(mode);
@@ -91,6 +92,7 @@ class DeviceConnection {
         acceptAllDevices: opts.acceptAllDevices,
         extraServices: custom,
         preferred: readPreferred(),
+        resumeId: opts.resumeId,
         onPhase: (p) => gen === this.generation && store.setStatus(p === 'requesting' ? 'requesting' : 'connecting'),
       });
     }
@@ -102,13 +104,37 @@ class DeviceConnection {
       const msg = asError(e);
       if (e instanceof NoCharacteristicError) this.recordDiagnostics(e);
       this.teardown();
-      useDevice.getState().setStatus(msg === 'cancelled' ? 'idle' : 'error', msg === 'cancelled' ? null : msg);
-      if (msg === 'cancelled') useDevice.getState().setMode(null);
+      // A failed silent resume is not an error: the UI offers a one-click reconnect instead.
+      const quiet = msg === 'cancelled' || opts.resumeId !== undefined;
+      useDevice.getState().setStatus(quiet ? 'idle' : 'error', quiet ? null : msg);
+      if (quiet) useDevice.getState().setMode(null);
       return false;
     }
     if (gen !== this.generation) return false;
     this.onConnected();
+    const last: LastDevice = mode === 'demo' ? { mode } : { mode, id: this.ble?.deviceId ?? undefined, name: this.ble?.deviceName };
+    saveLastDevice(last);
+    useDevice.getState().setLastDevice(last);
     return true;
+  }
+
+  private resumed = false;
+
+  /**
+   * After a page reload: restart the demo, or reconnect silently to the last Bluetooth device
+   * when Chrome allows it (persistent permissions). Otherwise the UI shows a Reconnect button.
+   */
+  async resume(): Promise<void> {
+    if (this.resumed) return;
+    this.resumed = true;
+    const last = readLastDevice();
+    useDevice.getState().setLastDevice(last);
+    if (!last || this.transport || useDevice.getState().mode) return;
+    if (last.mode === 'demo') {
+      await this.connect('demo');
+    } else if (last.id && canResumeSilently()) {
+      await this.connect('ble', { resumeId: last.id });
+    }
   }
 
   /**
@@ -128,7 +154,7 @@ class DeviceConnection {
 
   /** Read-only view of a device another browser is publishing through the API. */
   watch(sn: string, name: string | null): void {
-    void this.disconnect();
+    void this.disconnect({ forget: false });
     const store = useDevice.getState();
     store.resetDevice();
     store.setMode('watch');
@@ -148,7 +174,12 @@ class DeviceConnection {
     );
   }
 
-  async disconnect(): Promise<void> {
+  /** `forget: true` (user pressed Disconnect) also stops auto-resume on the next reload. */
+  async disconnect({ forget = true }: { forget?: boolean } = {}): Promise<void> {
+    if (forget) {
+      clearLastDevice();
+      useDevice.getState().setLastDevice(null);
+    }
     this.generation++;
     this.stopWatch?.();
     this.stopWatch = null;

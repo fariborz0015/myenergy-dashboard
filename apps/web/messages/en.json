@@ -111,6 +111,12 @@
       "body": "Another browser is streaming these devices through your API.",
       "action": "Watch",
       "empty": "No station is being streamed right now. Connect one in another tab and it appears here."
+    },
+    "reconnect": {
+      "title": "Reconnect to {name}",
+      "hint": "After a page reload Chrome asks you to pick the station once more.",
+      "action": "Reconnect",
+      "dismiss": "Forget this station"
     }
   },
   "dashboard": {
