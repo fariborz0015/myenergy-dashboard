@@ -10,7 +10,9 @@
     "history": "History",
     "settings": "Settings",
     "skip": "Skip to content",
-    "main": "Main navigation"
+    "main": "Main navigation",
+    "install": "Install app",
+    "installHint": "Install MyEnergy as an app: it opens in its own window from the Start menu or desktop."
   },
   "units": {
     "h": "h",

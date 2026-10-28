@@ -14,7 +14,8 @@ export const metadata: Metadata = {
   title: { default: 'MyEnergy', template: '%s · MyEnergy' },
   description: 'Live dashboard and control for the INFINITY 1000 portable power station over Web Bluetooth.',
   applicationName: 'MyEnergy',
-  icons: { icon: '/icon.svg' },
+  icons: { icon: [{ url: '/icons/icon.svg', type: 'image/svg+xml' }, { url: '/icons/icon-192.png', sizes: '192x192' }], apple: '/icons/apple-touch-icon.png' },
+  appleWebApp: { capable: true, title: 'MyEnergy', statusBarStyle: 'black-translucent' },
 };
 
 export const viewport: Viewport = {

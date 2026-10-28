@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "app:build": "node scripts/app.mjs build",
+    "app:start": "node scripts/app.mjs start"
   },
   "dependencies": {
     "@myenergy/protocol": "workspace:*",

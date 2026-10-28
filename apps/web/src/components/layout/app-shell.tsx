@@ -8,6 +8,7 @@ import { Bluetooth, Calculator, History, LayoutDashboard, Settings } from 'lucid
 import { cn } from '@/lib/utils';
 import { ConnectionPill } from './connection-pill';
 import { Logo } from './logo';
+import { InstallButton } from './pwa';
 import { ThemeToggle } from './theme-toggle';
 
 const NAV = [
@@ -63,6 +64,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
 
           <div className="ms-auto flex items-center gap-2">
+            <InstallButton />
             <ConnectionPill />
             <ThemeToggle />
           </div>

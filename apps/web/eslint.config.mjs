@@ -11,7 +11,7 @@ const config = [
       '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', destructuredArrayIgnorePattern: '^_' }],
     },
   },
-  { ignores: ['.next/**', 'node_modules/**', 'playwright-report/**', 'test-results/**', 'next-env.d.ts'] },
+  { ignores: ['.next/**', '.next-app/**', 'node_modules/**', 'playwright-report/**', 'test-results/**', 'next-env.d.ts'] },
 ];
 
 export default config;

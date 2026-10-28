@@ -64,6 +64,27 @@ pnpm test:e2e       # Playwright smoke test (desktop + phone) against a producti
 
 Environment variables: `apps/web/.env.example` (`NEXT_PUBLIC_API_URL`) and `apps/api/.env.example` (`DATABASE_URL`, `PORT`, `WEB_ORIGIN`, `TELEMETRY_STORE_BUCKET_S`).
 
+## Install as an app (Windows / Android / ChromeOS)
+
+The dashboard is a PWA. Once installed it opens from the Start menu or desktop in its own window, like any Chrome app.
+
+```bash
+pnpm app:build                 # production build into apps/web/.next-app
+pnpm --filter @myenergy/api build
+```
+
+Start the app server (port **3210**) and the API (port 4000) in the background. This is safe to run repeatedly:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start-myenergy.ps1
+```
+
+Then open `http://localhost:3210` in Chrome or Edge and click **Install app** in the header (or the install icon in the address bar).
+
+The service worker caches every page and its JS on the first visit, so the installed app **opens and works even when the app server isn't running**. That covers Bluetooth, the demo station, the planner and settings. Only History, live watching and cloud sync need the API.
+
+The installed app is a different origin (`localhost:3210`) from `pnpm dev` (`localhost:3000`). Its settings, and the Bluetooth device you pick, are therefore separate.
+
 ## Browser support for Web Bluetooth
 
 | Platform | Works? |

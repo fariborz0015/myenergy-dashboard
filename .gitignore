@@ -12,3 +12,5 @@ playwright-report
 test-results
 next-env.d.ts
 .claude/launch.json
+.next-app
+.logs

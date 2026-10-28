@@ -22,7 +22,8 @@ export default defineConfig({
     { name: 'desktop', use: { ...devices['Desktop Chrome'], channel: process.env.PW_CHANNEL ?? 'chrome' } },
     { name: 'mobile', use: { ...devices['Pixel 7'], channel: process.env.PW_CHANNEL ?? 'chrome' } },
   ],
-  webServer: {
+  // APP_URL points the tests at an already running app server (see e2e/pwa.spec.ts).
+  webServer: process.env.APP_URL ? undefined : {
     command: `pnpm exec next start -p ${PORT}`,
     url: `http://localhost:${PORT}`,
     reuseExistingServer: !process.env.CI,

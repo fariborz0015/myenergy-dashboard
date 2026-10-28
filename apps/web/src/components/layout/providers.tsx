@@ -6,6 +6,7 @@ import { Direction } from 'radix-ui';
 import { Toaster } from 'sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { DeviceRuntime } from './device-runtime';
+import { PwaRuntime } from './pwa';
 
 function ThemedToaster() {
   const { resolvedTheme } = useTheme();
@@ -33,6 +34,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <TooltipProvider delayDuration={300}>
           {children}
           <DeviceRuntime />
+          <PwaRuntime />
           <ThemedToaster />
         </TooltipProvider>
       </Direction.Provider>
