@@ -81,6 +81,15 @@ powershell -ExecutionPolicy Bypass -File scripts\start-myenergy.ps1
 
 Then open `http://localhost:3210` in Chrome or Edge and click **Install app** in the header (or the install icon in the address bar).
 
+**Start automatically with PM2 (recommended).** If PM2 already resurrects your processes at logon, register both servers once:
+
+```bash
+pm2 start ecosystem.config.cjs   # myenergy-app (3210) + myenergy-api (4000)
+pm2 save                         # include them in `pm2 resurrect` at logon
+```
+
+To update after changing code, run `pnpm app:build && pm2 restart myenergy-app`. For the API, run `pnpm --filter @myenergy/api build && pm2 restart myenergy-api`. Stop the API with `pm2 stop myenergy-api` before running `pnpm dev`, because both use port 4000.
+
 The service worker caches every page and its JS on the first visit, so the installed app **opens and works even when the app server isn't running**. That covers Bluetooth, the demo station, the planner and settings. Only History, live watching and cloud sync need the API.
 
 The installed app is a different origin (`localhost:3210`) from `pnpm dev` (`localhost:3000`). Its settings, and the Bluetooth device you pick, are therefore separate.
